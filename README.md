@@ -1,6 +1,7 @@
 # Precect description
 
-Recent developments of Kratzert et al. (2018) suggest that the application of long short-term memory (LSTM) networks outperforms traditional hydrological models in the prediction of daily streamflows. This work was applied for catchments in the CAMELS dataset covering northern America. Bernt Viggo Matheussen et al. (Å Energi) have tested the application of LSTM in combination with traditional hydrological models for catchments in southern Norway and found a significant improvement in the stream flow predictions. However, their work is not published and not publicly available. Thus, a first goal can be to repeat their study on NVE-catchments in Norway.
+Recent developments of Kratzert et al. (2018) suggest that the application of long short-term memory (LSTM) networks outperforms traditional hydrological models in the prediction of daily streamflows. This work was applied to catchments in the CAMELS dataset covering North America. <br>
+Bernt Viggo Matheussen et al. (Å Energi) have tested the application of LSTM in combination with traditional hydrological models for catchments in southern Norway and found a significant improvement in the streamflow predictions. However, their work is not published and not publicly available. Thus, a first goal can be to repeat their study on NVE-catchments in Norway.
 
 # Tentativ plan for project 1
 
