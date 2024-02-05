@@ -12,4 +12,7 @@
 | 12       | Mar. 18 - 24    | Room for margin / leeway                              |
 
 ## Reading/video recommendations
-Comming soon
+
+### Reading:
+- [Å Energi presentation](https://www.hydrologiraadet.no/wp-content/uploads/2023/10/1_Matheussen.pdf)
+- [Å Energi abstract](https://www.hydrologiraadet.no/wp-content/uploads/2023/09/P_Matheussen_benchmark.pdf)
