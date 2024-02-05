@@ -16,3 +16,4 @@
 ### Reading:
 - [Å Energi presentation](https://www.hydrologiraadet.no/wp-content/uploads/2023/10/1_Matheussen.pdf)
 - [Å Energi abstract](https://www.hydrologiraadet.no/wp-content/uploads/2023/09/P_Matheussen_benchmark.pdf)
+- ["The LSTM model": Post-Processing the National Water Model with Long Short-Term Memory Networks for Streamflow Predictions and Model](https://onlinelibrary.wiley.com/doi/abs/10.1111/1752-1688.12964)
