@@ -4,137 +4,128 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from datetime import datetime
+from sklearn.preprocessing import StandardScaler
 
 
 class Data(Dataset):
-
     def __init__(self, data, lookback) -> None:
         super().__init__()
         self.X = []
         self.y = []
-        self.data = data
-        self.lookback = lookback
 
         for i in range(len(data) - lookback):
             feature = data[i:i+lookback, :2]
-            target = data[i+1:i+lookback+1, 2:]
+            target = data[i+lookback, 2]
             self.X.append(feature)
             self.y.append(target)
 
-        # print(len(self.X), self.X[0].shape)
-        # print(len(self.y), self.y[0].shape)
-
+        self.X = np.array(self.X, dtype=np.float32)
+        self.y = np.array(self.y, dtype=np.float32).reshape(-1, 1)
+         
     def __len__(self):
-        return self.data.shape[0] - self.lookback
-
+        return len(self.X)
+    
     def __getitem__(self, idx):
         p = (torch.tensor(self.X[idx]), torch.tensor(self.y[idx]))
-        # print(p[1].shape)
-        return p
-        # return (torch.tensor(self.X[idx]), torch.tensor(self.y[idx]))
-
+        return p    
+    
 
 class Model(nn.Module):
 
-    def __init__(self) -> None:
+    def __init__(self, dropout_rate=0.4) -> None:
         super().__init__()
-        self.lstm = nn.LSTM(input_size=2, hidden_size=50,
-                            num_layers=2, batch_first=True, dropout=0.2)
-        self.fc2 = nn.Linear(50, 1)
-        self.relu2 = nn.ReLU()
+        self.lstm = nn.LSTM(input_size=2, hidden_size=256, 
+                            num_layers=1, batch_first=True)
+        self.dropout = nn.Dropout(dropout_rate)  
+        self.fc = nn.Linear(256, 1) 
+        self.relu = nn.ReLU() 
 
     def forward(self, x):
-        x, _ = self.lstm(x)
-        x = self.fc1(x)
+        x, _ = self.lstm(x)  
+        x = self.dropout(x[:, -1, :])  
+        x = self.fc(x)
         x = self.relu(x)
-        x = self.fc2(x)
-        x = self.relu2(x)
-
         return x
+    
 
-
-def fit(dataloader, model, loss_fn, lr=0.001, epochs=100, n_print=100):
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
-    total_loss = []
-
-    for e in range(epochs):
-
-        for x_batch, y_batch in dataloader:
-
-            # print(f"before: {x_batch.shape}")
-            pred = model.forward(x_batch)
-            # print(f"After: {pred.shape}")
-            loss = loss_fn(pred, y_batch)
+def train_model(dataloader, model, loss_fn, optimizer, epochs):
+    model.train()
+    epoch_losses = []
+    for epoch in range(epochs):
+        total_loss = 0
+        for batch, (X, y) in enumerate(dataloader):
             optimizer.zero_grad()
+            pred = model(X)
+            loss = loss_fn(pred, y)
             loss.backward()
             optimizer.step()
+            total_loss += loss.item()
+        epoch_loss = total_loss / len(dataloader)
+        epoch_losses.append(epoch_loss)
+        if epoch % 10 == 0:
+            print(f'Epoch {epoch}, Loss: {epoch_loss}')
+    return epoch_losses
 
-            total_loss.append(loss.item())
 
-        if e % n_print == 0:
-            print("Mean loss per epoch")
-            print(f"Loss:{np.mean(total_loss)} || Epoch: {e}")
-
-
-def accuracy(dataloader, model, loss_fn):
-
+def evaluate_model(dataloader, model, loss_fn):
+    model.eval()
+    total_loss = 0
     pred_val = []
     y_val = []
-
     with torch.no_grad():
-        for x_batch, y_batch in dataloader:
-
-            pred = model.forward(x_batch)
-            loss = loss_fn(pred, y_batch)
-
-            y_val.append(y_batch)
+        for X, y in dataloader:
+            pred = model(X)
             pred_val.append(pred)
-
+            y_val.append(y)
+            total_loss += loss_fn(pred, y).item()
+            
+    print(f'Validation Loss: {total_loss / len(dataloader)}') # dataloader.dataset
     return pred_val, y_val
 
 
+
 if __name__ == "__main__":
-
     data = pd.read_csv("ptq.txt", delimiter='\t')
-    timeseries = np.zeros((data.shape[0], 3), dtype=np.float32)
-    # print(data[["Prec."]].values)
-    timeseries[:, 0] = data["Prec."].values.astype(np.float32)
-    timeseries[:, 1] = data["Temp"].values.astype(np.float32)
-    timeseries[:, 2] = data["Qobs"].values.astype(np.float32)
+    timeseries = np.column_stack((data["Prec."].values, data["Temp"].values, data["Qobs"].values)).astype(np.float32)
 
-    train = timeseries[:2000, :]
-    val = timeseries[2000:3000, :]
+    train_size = int(len(timeseries) * 0.8)
+    train_data = timeseries[ : train_size, :]
+    val_data = timeseries[train_size :, :]
 
-    train_data = Data(train, 365)
-    val_data = Data(val, 365)
 
-    train_dataloader = DataLoader(
-        train_data, batch_size=32, shuffle=True, num_workers=4)
-    val_dataloader = DataLoader(val_data, batch_size=32, shuffle=True)
-    loss_fn = nn.MSELoss()
+    train_dataset = Data(train_data, 365)
+    val_dataset = Data(val_data, 365)
+
+    train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
     model = Model()
+    loss_fn = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    # print(train_dataloader[0].shape)
+    epochs = 300
+    epoch_losses = train_model(train_dataloader, model, loss_fn, optimizer, epochs=epochs)
 
-    fit(train_dataloader, model, loss_fn, 0.01, 100, 10)
-    pred_val, y_val = accuracy(val_dataloader, model, loss_fn)
-    print(pred_val[0])
-    print(pred_val[0].shape)
-    print(pred_val)
-    print(y_val)
+    pred_val, y_val = evaluate_model(val_dataloader, model, loss_fn)
 
-    plt.scatter(np.linspace(0, 5, 365), pred_val[0])
+    pred_val_np = torch.cat(pred_val, dim=0).numpy()
+    y_val_np = torch.cat(y_val, dim=0).numpy()
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(pred_val_np, label='LSRM Prediction', alpha=0.7)
+    plt.plot(y_val_np, label='Qobs (data)', alpha=0.7)
+    plt.title('LSTM Predictions vs Observed Data')
+    plt.xlabel('Days')
+    plt.ylabel('Discharge')
+    plt.legend()
+    plt.savefig('LSTM_Predictions_vs_Observed_Data_new.png')
     plt.show()
 
-    """
-    dates = [datetime.strptime(f"{date}", "%Y%m%d") for date in data["date"]]
-
-    plt.plot_date(dates, data["Prec."], xdate=True)
-    plt.plot_date(dates, data["Temp"], xdate=True)
-    plt.plot_date(dates, data["Qobs"], xdate=True)
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(epochs), epoch_losses, label='Training Loss', alpha=0.7)
+    plt.title('Training Loss vs Epochs')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('Training_Loss_vs_Epochs_new.png')
     plt.show()
-    """
