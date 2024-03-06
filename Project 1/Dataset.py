@@ -56,10 +56,12 @@ class Data(Dataset):
         # Creating feature and target arrays
         for i in range(self.data_shape[0] - self.lookback):
             feature = self.timeseries[i:i+self.lookback, :self.num_features-2]
-            target = self.timeseries[i+1:i +
-                                     self.lookback+1, self.num_features-2:]
+            target = self.timeseries[i + self.lookback+1, -1]
             self.X.append(feature)
             self.Y.append(target)
+
+        self.X = np.array(self.X, dtype=np.float32)
+        self.Y = np.array(self.Y, dtype=np.float32).reshape(-1, 1)
 
     def __len__(self) -> int:
         return self.data_shape[0] - self.lookback
