@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import os
 
+# How to install Ray Tune: pip install "ray[tune]"
 from ray import tune
 from ray import train
 from ray.tune import CLIReporter
