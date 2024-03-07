@@ -26,9 +26,12 @@ class HydrologyLSTM(nn.Module):
         return x
 
     def loss_function(self, y_pred, y):
-        # TODO:
-        # Define loss function
-        pass
+        mean_true = torch.mean(y)
+        numerator = torch.sum(torch.square(y - y_pred))
+        denominator = torch.sum(torch.square(y - mean_true))        
+        nse_loss = numerator / denominator
+        return nse_loss
+
 
     def fit(self, dataloader, epochs: int = 100, lr: float = 0.001, store_data=False, PATH: str = None, n_print: int = 10):
 
