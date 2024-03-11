@@ -3,7 +3,6 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import pandas as pd
 
-
 class Data(Dataset):
 
     def __init__(self, data: pd.DataFrame, lookback: int, split: tuple[float, float, float]):
@@ -15,64 +14,71 @@ class Data(Dataset):
         Parameters:
             data - A pandas DataFrame 
             lookback - An integer telling how many days the model will remember
-            split - How to split into training, validation and test sets
+            split - How to split into training, validation and test sets (fractions)
         """
         if not isinstance(lookback, int):
-            print(f"Needs to be of type int, not {type(lookback)}")
+            print(f"Parameter 'lookback' needs to be of type int, not {type(lookback)}!")
             raise TypeError
 
         if not isinstance(data, pd.DataFrame):
-            print(f"Needs to be a pandas DataFrame object, not {type(data)}")
+            print(f"Parameter 'data' needs to be a pandas DataFrame object, not {type(data)}!")
             raise TypeError
+
+        if sum(split) > 1:
+            print(f"Parameter 'split' fractions must sum up to 1, current sum = {sum(split):.4f}!")
+            raise ValueError
 
         super().__init__()
         self.data_shape = data.shape
 
-        self.X = []
-        self.Y = []
-        self.data = data
-        self.lookback = lookback
-
-        # Extracting features and target values from DataFrame
-        self.timeseries = np.zeros(
-            (self.data_shape[0], self.data_shape[1] - 1))
-
-        # TODO:
-        #####################
-        # Add train test split
-        ####################
-
-        keys = list(data.keys())
-
-        if keys[0] not in ["Date", "date", "Dates", "dates"]:
+        if data.keys()[0] not in ["Date", "date", "Dates", "dates"]:
             print("Please use a DataFrame with the dates in the first columns")
             raise ValueError
 
-        self.num_features = len(keys)
+        
+        self.dates = pd.to_datetime(data.iloc[:, 0])
 
-        for key in range(self.num_features-1):
-            self.timeseries[:, key] = data[keys[key]].values.astype(np.float32)
+        self.features = data.iloc[:, 1:-1].to_numpy(dtype=np.float32)
+        self.targets = data.iloc[:, -1].to_numpy(dtype=np.float32)
 
-        # Creating feature and target arrays
-        for i in range(self.data_shape[0] - self.lookback):
-            feature = self.timeseries[i:i+self.lookback, :self.num_features-2]
-            target = self.timeseries[i + self.lookback+1, -1]
-            self.X.append(feature)
-            self.Y.append(target)
+        X, Y = [], []
 
-        self.X = np.array(self.X, dtype=np.float32)
-        self.Y = np.array(self.Y, dtype=np.float32).reshape(-1, 1)
+        # Generate sequences for features and corresponding targets
+        for i in range(len(self.features) - lookback):
+            X.append(self.features[i:i + lookback])
+            Y.append(self.targets[i + lookback])
+
+        self.X = np.array(X, dtype=np.float32)
+        self.Y = np.array(Y, dtype=np.float32).reshape(-1, 1)
+
+
+        # Splitting the dataset into train, test and validation sets
+        total_size = len(self.X)
+        train_end = int(total_size * split[0])
+        test_end = int(total_size * (split[0] + split[1]))
+
+        self.train = (self.X[:train_end], self.Y[:train_end])
+        self.test = (self.X[train_end:test_end], self.Y[train_end:test_end])
+        self.validation = (self.X[test_end:], self.Y[test_end:])
 
     def __len__(self) -> int:
-        return self.data_shape[0] - self.lookback
+        return len(self.X)
 
     def __getitem__(self, idx) -> tuple[torch.tensor, torch.tensor]:
         return torch.tensor(self.X[idx]), torch.tensor(self.Y[idx])
 
-
 if __name__ == "__main__":
 
     data = pd.read_csv("ptq.txt", delimiter='\t')
-    myData = Data(data, 365)
 
-    print(myData[0])
+    lookback = 360
+
+    train = 0.7
+    test = 0.2
+    validation = 0.1
+
+    myData = Data(data, lookback = lookback, split = (train, test, validation))
+
+    print(f"Test set size: {len(myData.train[0])}")
+    print(f"Test set size: {len(myData.test[0])}")
+    print(f"Validation set size: {len(myData.validation[0])}")

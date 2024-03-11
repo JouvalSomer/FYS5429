@@ -5,7 +5,7 @@ import numpy as np
 
 class HydrologyLSTM(nn.Module):
 
-    def __init__(self, input_size: int, hidden_size: int, num_layers: int, drop_out: float = 0.4):
+    def __init__(self, input_size: int, hidden_size: int, num_layers: int = 1, drop_out: float = 0.4):
         super().__init__()
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True)
@@ -15,6 +15,8 @@ class HydrologyLSTM(nn.Module):
 
         # Stored values
         self.epoch_loss = []
+        self.pred_validation_set = []
+        self.y_validation_set = []
 
     def forward(self, x):
 
@@ -39,7 +41,7 @@ class HydrologyLSTM(nn.Module):
         self.train()
 
         for e in range(epochs):
-
+        
             running_loss = 0
             for x_batch, y_batch in dataloader:
 
@@ -62,10 +64,16 @@ class HydrologyLSTM(nn.Module):
             torch.save(self, PATH)
 
     def predict(self, dataloader):
-
         self.eval()
+        total_loss = 0
         with torch.no_grad():
             for x_batch, y_batch in dataloader:
 
                 pred = self.forward(x_batch)
-                loss = self.loss_fn(pred, y_batch)
+                
+                self.pred_validation_set.append(pred)
+                self.y_validation_set.append(y_batch)
+
+                total_loss += self.loss_function(pred, y_batch).item()
+                
+        # print(f'Validation Loss: {total_loss / len(dataloader)}') # dataloader.dataset
