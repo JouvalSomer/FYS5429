@@ -61,6 +61,11 @@ class Data(Dataset):
         self.test = (self.X[train_end:test_end], self.Y[train_end:test_end])
         self.validation = (self.X[test_end:], self.Y[test_end:])
 
+        self.train_DataLoader = DataLoader(self.train, batch_size=32, shuffle=True)
+        self.test_DataLoader = DataLoader(self.test, batch_size=32, shuffle=True)
+        self.validation_DataLoader = DataLoader(self.validation, batch_size=32, shuffle=False)
+
+
     def __len__(self) -> int:
         return len(self.X)
 
