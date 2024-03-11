@@ -35,7 +35,7 @@ class HydrologyLSTM(nn.Module):
         return nse_loss
 
 
-    def fit(self, dataloader, epochs: int = 100, lr: float = 0.001, store_data=False, PATH: str = None, n_print: int = 10):
+    def fit(self, dataloader, epochs: int = 100, lr: float = 0.001, store_data = False, PATH: str = None, n_print: int = 10):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.train()
