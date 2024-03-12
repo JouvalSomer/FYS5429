@@ -35,7 +35,7 @@ class HydrologyLSTM(nn.Module):
         return nse_loss
 
 
-    def fit(self, dataloader, epochs: int = 100, lr: float = 0.001, store_data = False, PATH: str = None, n_print: int = 10):
+    def fit(self, dataloader, epochs: int, lr: float = 0.001, store_data = False, PATH: str = None, n_print: int = 10):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.train()
@@ -70,10 +70,9 @@ class HydrologyLSTM(nn.Module):
             for x_batch, y_batch in dataloader:
 
                 pred = self.forward(x_batch)
-                
                 self.pred_validation_set.append(pred)
                 self.y_validation_set.append(y_batch)
 
                 total_loss += self.loss_function(pred, y_batch).item()
-                
-        # print(f'Validation Loss: {total_loss / len(dataloader)}') # dataloader.dataset
+
+        print(f'Validation Loss: {total_loss / len(dataloader)}') # dataloader.dataset
