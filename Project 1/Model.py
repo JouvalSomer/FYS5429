@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-import numpy as np
+from ray import train
+from ray import tune
 
 
 class HydrologyLSTM(nn.Module):
@@ -13,7 +14,6 @@ class HydrologyLSTM(nn.Module):
         self.fc = nn.Linear(hidden_size, 1)
         self.relu = nn.ReLU()
 
-        # Stored values
         self.epoch_loss = []
         self.pred_validation_set = []
         self.y_validation_set = []
@@ -35,15 +35,16 @@ class HydrologyLSTM(nn.Module):
         return nse_loss
 
 
-    def fit(self, dataloader, epochs: int, lr: float = 0.001, store_data = False, PATH: str = None, n_print: int = 10):
+    def fit(self, dataloaders, epochs: int, lr: float = 0.001, store_data = False, PATH: str = None, n_print: int = 10, ray_tune = False):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.train()
 
         for e in range(epochs):
-        
+
             running_loss = 0
-            for x_batch, y_batch in dataloader:
+
+            for x_batch, y_batch in dataloaders['train']:
 
                 optimizer.zero_grad()
                 pred = self.forward(x_batch)
@@ -51,28 +52,35 @@ class HydrologyLSTM(nn.Module):
                 loss.backward()
                 optimizer.step()
 
-                # TODO:
-                # Add storing of loss and other parameters
                 running_loss += loss.item()
-            e_loss = running_loss / len(dataloader.dataset)
-            self.epoch_loss.append(e_loss)
 
+            e_loss = running_loss / len(dataloaders['train'])
+            self.epoch_loss.append(e_loss)
+        
             if e % n_print == 0:
                 print(f"Epoch: {e} || Loss: {e_loss}")
 
+            if ray_tune:
+                val_loss = self.predict(dataloaders['validate'])
+                train.report({'loss': val_loss}) 
+
         if store_data:
             torch.save(self, PATH)
+
 
     def predict(self, dataloader):
         self.eval()
         total_loss = 0
         with torch.no_grad():
             for x_batch, y_batch in dataloader:
-
                 pred = self.forward(x_batch)
                 self.pred_validation_set.append(pred)
                 self.y_validation_set.append(y_batch)
 
                 total_loss += self.loss_function(pred, y_batch).item()
 
-        print(f'Validation Loss: {total_loss / len(dataloader)}') # dataloader.dataset
+        avg_loss = total_loss / len(dataloader.dataset)
+        print(f'Validation Loss: {avg_loss}')
+
+        return avg_loss
+
