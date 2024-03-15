@@ -49,6 +49,7 @@ def dataloader(data, lookback, split_ratios, batch_size):
     # Create DataLoaders
     dataloaders = {
         'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
+        'train_not_shuffled': DataLoader(train_dataset, batch_size=batch_size, shuffle=False),
         'validate': DataLoader(validate_dataset, batch_size=batch_size, shuffle=False),
         'test': DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     }

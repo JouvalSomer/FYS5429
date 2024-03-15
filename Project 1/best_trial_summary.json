@@ -1,0 +1,35 @@
+{
+    "config": {
+        "hidden_size": 200,
+        "num_layers": 1,
+        "drop_out": 0.2,
+        "lr": 0.00014688764595608396,
+        "batch_size": 128,
+        "lookback": 400
+    },
+    "metrics": {
+        "loss": 0.005705919662125353,
+        "timestamp": 1710498607,
+        "checkpoint_dir_name": null,
+        "done": true,
+        "training_iteration": 100,
+        "trial_id": "3202e_00012",
+        "date": "2024-03-15_11-30-07",
+        "time_this_iter_s": 7.465166807174683,
+        "time_total_s": 876.9136283397675,
+        "pid": 20296,
+        "hostname": "Jouval",
+        "node_ip": "127.0.0.1",
+        "config": {
+            "hidden_size": 200,
+            "num_layers": 1,
+            "drop_out": 0.2,
+            "lr": 0.00014688764595608396,
+            "batch_size": 128,
+            "lookback": 400
+        },
+        "time_since_restore": 876.9136283397675,
+        "iterations_since_restore": 100,
+        "experiment_tag": "12_batch_size=128,drop_out=0.2000,hidden_size=200,lookback=400,lr=0.0001,num_layers=1"
+    }
+}
