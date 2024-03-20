@@ -11,12 +11,11 @@ class HydrologyLSTM(nn.Module):
         self.train_loss = []
         self.validation_loss = []
 
-        self.y_hat_validation_set = [] 
+        self.y_hat_validation_set = []
         self.y_validation_set = []
 
-        self.y_hat_train_set = [] 
+        self.y_hat_train_set = []
         self.y_train_set = []
-
 
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True)
@@ -25,7 +24,6 @@ class HydrologyLSTM(nn.Module):
         self.relu = nn.ReLU()
 
         self.initialize_weights()
-
 
     def forward(self, x):
 
@@ -39,7 +37,7 @@ class HydrologyLSTM(nn.Module):
     def loss_function(self, y_pred, y):
         mean_true = torch.mean(y)
         numerator = torch.sum(torch.square(y - y_pred))
-        denominator = torch.sum(torch.square(y - mean_true))        
+        denominator = torch.sum(torch.square(y - mean_true))
         nse_loss = numerator / denominator
         return nse_loss
 
@@ -52,7 +50,7 @@ class HydrologyLSTM(nn.Module):
             elif 'bias' in name:  # Bias
                 param.data.fill_(0)
 
-    def fit(self, dataloaders, epochs: int, lr: float, store_data = False, PATH: str = None, n_print: int = 10, ray_tune = False):
+    def fit(self, dataloaders, epochs: int, lr: float, store_data=False, PATH: str = None, n_print: int = 10, ray_tune=False):
 
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.train()
@@ -75,17 +73,17 @@ class HydrologyLSTM(nn.Module):
 
             e_loss = running_loss / len(dataloaders['train'].dataset)
             self.train_loss.append(e_loss)
-        
+
             if e % n_print == 0:
                 print(f"Epoch: {e} || Loss: {e_loss}")
 
             if ray_tune:
-                val_loss, y_hat_set, y_set = self.predict(dataloaders['validate'], ray_tune)
-                train.report({'loss': val_loss}) 
+                val_loss, y_hat_set, y_set = self.predict(
+                    dataloaders['validate'], ray_tune)
+                train.report({'loss': val_loss})
 
         if store_data:
             torch.save(self, PATH)
-
 
     def predict(self, dataloader, ray_tune):
         self.eval()
@@ -109,4 +107,3 @@ class HydrologyLSTM(nn.Module):
         print(f'Validation Loss: {avg_loss}')
 
         return avg_loss, y_hat_set, y_set
-
