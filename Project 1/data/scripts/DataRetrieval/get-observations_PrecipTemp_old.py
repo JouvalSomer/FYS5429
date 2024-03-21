@@ -1,6 +1,8 @@
 """
 Download Climate data. Relevant parameters are precipitation, min and max temperature. It would also make sense
 to restrict this to only download the specifc years from 1980 to 2017
+
+It is named old, because the PhD named it like this.
 """
 
 

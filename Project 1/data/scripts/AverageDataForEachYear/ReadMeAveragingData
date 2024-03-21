@@ -1,0 +1,4 @@
+Two things:
+The averaging of Precip, min and maxTemp takes very long. This is something we should look into and maybe accelerate.
+
+For all parameters except SWE the script should be the same. We could change it from 7 scripts to two, just py passing the parameter we want to average and storing the foldernames somewhere with combination the parameter, but in my opinion redundant.

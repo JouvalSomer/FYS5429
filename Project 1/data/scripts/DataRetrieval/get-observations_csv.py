@@ -2,6 +2,12 @@
 
 """
 Official Script from NVE for getting hydrological discharge data from NVE stations.
+
+Change I did: The output folder is now stationID dependent, because the first ID indicates which catchment
+
+
+
+
 """
 
 import pandas as pd
@@ -105,9 +111,21 @@ def main(argv):
     #print(parsed_result['data'][0].keys())
     df = pd.read_json(json.dumps(parsed_result['data'][0]['observations']))
     station_id = station.replace(".", "_")
+    print(station_id)
+    print(station_id.split("_",1)[0])
     Directory = os.getcwd()
-    Obs_file = os.path.join(Directory, 'Data/Streamflow/NVE_stations/NVEobservations_s'+ station_id + '.cvs')
+    Obs_file = os.path.join(Directory, "Data/Streamflow/NVE_stations/Catchment"+ station_id.split("_",1)[0],"NVEObservation"+ station_id + '.cvs')
+    #Obs_file = os.path.join(Directory, "Data/Streamflow/NVE_stations/NVEObservation"+ station_id + ".cvs")
+    print(Obs_file)
+
+    # Extract the directory part of the path
+    directory_path = os.path.dirname(Obs_file)
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
     df.to_csv(Obs_file, index=False)
+
 
 
 if __name__ == "__main__":
