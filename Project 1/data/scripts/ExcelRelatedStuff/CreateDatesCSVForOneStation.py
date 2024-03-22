@@ -1,4 +1,7 @@
 """
+This file might be redundant.
+
+
 Create a Excel with days in the year range.
 
 Needs to be added:
