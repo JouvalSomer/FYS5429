@@ -6,7 +6,15 @@ from ray import tune
 
 class HydrologyLSTM(nn.Module):
 
-    def __init__(self, input_size: int, hidden_size: int, num_layers: int = 1, drop_out: float = 0.4):
+    def __init__(self,
+                 input_size: int,
+                 hidden_size: int,
+                 num_layers: int = 1,
+                 drop_out: float = 0.4
+                 ):
+
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() else 'cpu')
         super().__init__()
         self.train_loss = []
         self.validation_loss = []
@@ -19,6 +27,7 @@ class HydrologyLSTM(nn.Module):
 
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True)
+        self.l_norm = nn.LayerNorm(input_size)
         self.dropout = nn.Dropout(drop_out)
         self.fc = nn.Linear(hidden_size, 1)
         self.relu = nn.ReLU()
@@ -27,12 +36,23 @@ class HydrologyLSTM(nn.Module):
 
     def forward(self, x):
 
+        x = self.l_norm(x)
         x, _ = self.lstm(x)
         x = self.dropout(x)[:, -1, :]
         x = self.fc(x)
         x = self.relu(x)
 
         return x
+
+    def forward_predict(self, x):
+
+        x = self.l_norm(x)
+        x, (h, c) = self.lstm(x)
+        x = self.dropout(x)[:, -1, :]
+        x = self.fc(x)
+        x = self.relu(x)
+
+        return x, c
 
     def loss_function(self, y_pred, y):
         mean_true = torch.mean(y)
@@ -50,7 +70,15 @@ class HydrologyLSTM(nn.Module):
             elif 'bias' in name:  # Bias
                 param.data.fill_(0)
 
-    def fit(self, dataloaders, epochs: int, lr: float, store_data=False, PATH: str = None, n_print: int = 10, ray_tune=False):
+    def fit(self,
+            dataloaders,
+            epochs: int,
+            lr: float,
+            store_data=False,
+            PATH: str = None,
+            n_print: int = 10,
+            ray_tune=False
+            ) -> None:
 
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         self.train()
@@ -62,9 +90,9 @@ class HydrologyLSTM(nn.Module):
             for x_batch, y_batch in dataloaders['train']:
 
                 optimizer.zero_grad()
-                pred = self.forward(x_batch)
+                pred = self.forward(x_batch.to(self.device))
 
-                loss = self.loss_function(pred, y_batch)
+                loss = self.loss_function(pred, y_batch.to(self.device))
 
                 loss.backward()
                 optimizer.step()
@@ -78,26 +106,31 @@ class HydrologyLSTM(nn.Module):
                 print(f"Epoch: {e} || Loss: {e_loss}")
 
             if ray_tune:
-                val_loss, y_hat_set, y_set = self.predict(
+                val_loss, y_hat_set, y_set, cell_states = self.predict(
                     dataloaders['validate'], ray_tune)
                 train.report({'loss': val_loss})
 
         if store_data:
             torch.save(self, PATH)
 
-    def predict(self, dataloader, ray_tune):
-        self.eval()
+    def predict(self, dataloader, ray_tune) -> tuple[float, list, list, list]:
+
         y_hat_set = []
         y_set = []
+        cell_states = []
         total_loss = 0
+
+        self.eval()
         with torch.no_grad():
             for x_batch, y_batch in dataloader:
-                pred = self.forward(x_batch)
+                pred, cell = self.forward_predict(x_batch.to(self.device))
 
                 y_hat_set.append(pred)
                 y_set.append(y_batch)
+                cell_states.append(cell)
 
-                total_loss += self.loss_function(pred, y_batch).item()
+                total_loss += self.loss_function(pred,
+                                                 y_batch.to(self.device)).item()
 
         avg_loss = total_loss / len(dataloader.dataset)
 
@@ -106,4 +139,4 @@ class HydrologyLSTM(nn.Module):
 
         print(f'Validation Loss: {avg_loss}')
 
-        return avg_loss, y_hat_set, y_set
+        return avg_loss, y_hat_set, y_set, cell_states

@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, TensorDataset
 import numpy as np
 import pandas as pd
 
+
 def dataloader(data, lookback, split_ratios, batch_size):
     """
     Prepares training, validation, and test datasets and their respective DataLoaders using the custom Data class.
@@ -19,32 +20,35 @@ def dataloader(data, lookback, split_ratios, batch_size):
     features = data.iloc[:, 1:-1].values
     targets = data.iloc[:, -1].values
 
-
     # Calculate indices for splits
     total_samples = len(data)
     train_end = int(total_samples * split_ratios[0])
     validate_end = train_end + int(total_samples * split_ratios[1])
 
-
     # Generate sequences
+
     def generate_sequences(features, targets, start_idx, end_idx, lookback):
         X, Y = [], []
         for i in range(start_idx + lookback, end_idx):
             X.append(features[i-lookback:i])
             Y.append(targets[i])
         return np.array(X, dtype=np.float32), np.array(Y, dtype=np.float32).reshape(-1, 1)
-    
-    X_train, Y_train = generate_sequences(features, targets, 0, train_end, lookback)
-    X_validate, Y_validate = generate_sequences(features, targets, train_end, validate_end, lookback)
-    X_test, Y_test = generate_sequences(features, targets, validate_end, total_samples, lookback)
 
+    X_train, Y_train = generate_sequences(
+        features, targets, 0, train_end, lookback)
+    X_validate, Y_validate = generate_sequences(
+        features, targets, train_end, validate_end, lookback)
+    X_test, Y_test = generate_sequences(
+        features, targets, validate_end, total_samples, lookback)
 
     # Convert to PyTorch tensors and create datasets
-    def dataset(x, y): return TensorDataset(torch.tensor(x, dtype=torch.float), torch.tensor(y, dtype=torch.float))
+
+    def dataset(x, y):
+        return TensorDataset(torch.tensor(x, dtype=torch.float), torch.tensor(y, dtype=torch.float))
+
     train_dataset = dataset(X_train, Y_train)
     validate_dataset = dataset(X_validate, Y_validate)
     test_dataset = dataset(X_test, Y_test)
-
 
     # Create DataLoaders
     dataloaders = {
@@ -53,7 +57,6 @@ def dataloader(data, lookback, split_ratios, batch_size):
         'validate': DataLoader(validate_dataset, batch_size=batch_size, shuffle=False),
         'test': DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     }
-
 
     return dataloaders
 
