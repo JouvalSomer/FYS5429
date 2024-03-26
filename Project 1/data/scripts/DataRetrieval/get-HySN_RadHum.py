@@ -40,20 +40,34 @@ filelist = []
 
 #Loop to retrieve filenames and generate url address to download
 for file in listFD(FList, url):
-    filelist.append(file)
+    # Extract the year from the filename
+    # Extract the year from the filename
+    # Split the URL by "/" to isolate the filename
+    #print("before splitt /",file)
+    year = file.split("/")[-1]
+    # Extract the year portion from the filename
+    year = year.split("_")[-1].split(".")[0]
+    print(year)
+    # Check if the year falls within the range 1980 to 2017
+    if 1980 <= int(year) <= 2017:
+        filelist.append(file)
+
 
 #Filter for only humidity and shortwave radition files.
 filelist_Humidity = [k for k in filelist if 'Humidity' in k]
 filelist_SW_Rad = [k for k in filelist if 'Shortwave' in k]
-
+print(filelist_SW_Rad)
 print(len(filelist_Humidity))
 
 #Loop to designate filenames and directory then download humidity files
-for file in filelist_Humidity:
+for file in filelist_Humidity[:1]:
     Download_Dir = os.path.join(Directory, 'Data/Humidity/')
+    # Create the directory if it doesn't exist
+    if not os.path.exists(Download_Dir):
+        os.makedirs(Download_Dir)
     download_url(file)
 
 #Loop to designate filenames and directory then download shortwave radiation files
-for file in filelist_SW_Rad:
+for file in filelist_SW_Rad[:1]:
     Download_Dir = os.path.join(Directory, 'Data/Radiation/')
     download_url(file)

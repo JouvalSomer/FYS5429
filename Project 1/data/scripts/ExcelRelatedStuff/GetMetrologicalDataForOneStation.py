@@ -1,4 +1,3 @@
-
 """
 Gets the metrological Data for each parameter and puts it into a .xlsx from 1980 to 2017 in a daily interval
 

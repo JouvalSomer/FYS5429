@@ -32,11 +32,6 @@ meanFeatures = []
 for feature in listOfStaticFeatures:
     meanFeatures.append(np.mean(data[feature]))
 
-# Load the Excel file
-df = pd.read_excel(finalOutput)
-
-# Define the list of column names you want to add
-
 # Add the new columns to the DataFrame
 for col_name in listOfStaticFeatures:
     df[col_name] = ""

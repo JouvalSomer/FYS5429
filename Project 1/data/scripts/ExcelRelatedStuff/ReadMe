@@ -1,0 +1,30 @@
+We want an excel for each catchment of the shape:
+
+"date" "dynamic features" "medium_dynamik aka yearly average" "static_features" "hydrological discharge"
+
+date:
+Create Excel that contains dates. createDatesCSV.py
+
+dynamic:
+Create excel that contains dynamic feature in second column and dates in first column for each parameter. 
+Add the respective columns to the date excel
+--> GetDailyMetrologicalDataForOneStation.py
+
+
+Averaged per year:
+Create excel that contains averaged feature per year in second column and year in first column -- done
+Extrapolate it into an excel with a daily timescale.
+Add it to the date excel
+
+Static features:
+Find all stations from catchment.
+For each station find the static values and average them over all stations.
+Put the constant static feature into each cell in the respective column
+--> GetStaticFeaturesAndAddToExcel
+
+
+
+
+
+
+

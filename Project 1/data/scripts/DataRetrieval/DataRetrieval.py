@@ -1,9 +1,14 @@
+
 #This script excutes data retrieval from multiple sources using institution specific API scripts or developed scripts from the Scripts folder.
 
 """
 This script runs all get-"metrological Data".py through the NVE API. Below some scripts are disabled through
 comments. They need to be enabled depending on what has already been downloaded and what not. Through the 
 get-observations.py the files are automatically split into Catchments
+
+After All Climate data is downloaded run "splitPrecipMinMaxTemp.py" to split the dataset containing "rr", "tn" and "tx" into
+three seperate ones in the folders "Precip", "maxTemp" and "minTemp"
+
 
 Problem:
 Some Stations can't be obtained with the NVE Api, Error 404. I dont know whats happening here.
@@ -37,27 +42,28 @@ for station in stations:
     api_key = "CxS0G8bnxEGIOXolz/PBow=="
     script_command = ["python", "get-observations_csv.py", "-a", "CxS0G8bnxEGIOXolz/PBow==", "-s", item1, "-p", "1001", "-r", "1440", "-t", "/P1D"]
     #subprocess.run(script_command)
-    print(script_command)
+    #print(script_command)
     #os.system(script)
     #print(script)
-print("1")
+print("NVE Stations Done")
 ################Precipitation & Temperature###############
 #Downloads Nordic Gridded Climate Dataset netcdf files for daily precipitation and temperature for Norway and Sweden
 script = "get-observations_PrecipTemp_old.py"
 #os.system(script)
 subprocess.run(["python", script])
-print("now splitting the dataset into only precip, only mintemp and only maxtemp")
-script = "splitPrecipMinMaxTemp.py"
-print("2")
+print("Precip and Temperature Done")
 ###############Snow Water Equivalent###############
 #Downloads seNorge Snow netcdf files for snow water equivalent for Norway
-#script = "get-observations_SWE.py"
+script = "get-observations_SWE.py"
 #os.system(script)
-#subprocess.run(["python", script])
-print("3")
+subprocess.run(["python", script])
+print("SWE DOne")
 ###############Humidity and Radiation###############
 #Downloads MET observations for longwave and short wave radiation, humidity, and windspeed for Norway
-#script = "get-HySN_RadHum.py"
+script = "get-HySN_RadHum.py"
 #os.system(script)
-#subprocess.run(["python", script])
-print("4")
+subprocess.run(["python", script])
+print("Radiation and Humidity done")
+# Download MET observations for pressure
+script = "get-pressure.py"
+subprocess.run(["python", script])

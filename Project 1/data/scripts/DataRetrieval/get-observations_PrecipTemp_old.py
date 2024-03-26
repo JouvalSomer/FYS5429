@@ -3,6 +3,9 @@ Download Climate data. Relevant parameters are precipitation, min and max temper
 to restrict this to only download the specifc years from 1980 to 2017
 
 It is named old, because the PhD named it like this.
+
+TODO:
+- download only dates from 1980 to 2017
 """
 
 
@@ -17,6 +20,9 @@ print("Script started")
 Directory = os.getcwd()
 Download_Dir = os.path.join(Directory, 'Data/Climate/')
 print("Directory:", Directory)
+# Create the directory if it doesn't exist
+if not os.path.exists(Download_Dir):
+    os.makedirs(Download_Dir)
 
 # Partial URL address of where to download files but need to add file names to the end of it
 url = "https://thredds.met.no/thredds/fileServer/senorge/seNorge_2018/Archive/"
@@ -51,10 +57,15 @@ filelist = []
 
 # Loop to retrieve filenames and generate URL address to download
 for file in listFD(FList, url):
-    filelist.append(file)
+    # Extract the year from the filename
+    year = file[-7:-3]
+    print(year)
+    # Check if the year falls within the range 1980 to 2017
+    if 1980 <= int(year) <= 2017:
+        filelist.append(file)
 
 # Loop to designate filenames & directory and download files
-for file in filelist:
+for file in filelist[:1]:
     download_url(file)
 
 print("Download completed.")
