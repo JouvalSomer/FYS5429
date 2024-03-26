@@ -47,7 +47,7 @@ def download_file(url, download_dir):
 def download_dataset(dataset_info):
     """Download datasets based on the provided information."""
     for info in dataset_info:
-        print(f"\nStarting download for: {info['name']}")
+        print(f"\nStarting downloading the {info['name']} data.")
         download_dir = setup_directory(info['subdirectory'])
 
         file_urls = list_file_urls(
@@ -90,6 +90,6 @@ def main(years):
 
   
 if __name__ == "__main__":
-    years = (2015, 2015)
+    years = (1980, 2000)
     main(years)
 
