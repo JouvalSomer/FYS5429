@@ -4,6 +4,23 @@ from ray import train
 from ray import tune
 
 
+class LSTMBlock(nn.Module):
+
+    def __init__(self,
+                 input_size: int,
+                 hidden_size: int,
+                 num_layers: int
+                 ) -> None:
+
+        self.lstm_cell = nn.LSTMCell(
+            input_size=input_size, hidden_size=hidden_size)
+        self.cell_array = None
+        pass
+
+    def forward(self, x):
+        pass
+
+
 class HydrologyLSTM(nn.Module):
 
     def __init__(self,
@@ -27,7 +44,7 @@ class HydrologyLSTM(nn.Module):
 
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True)
-        self.l_norm = nn.LayerNorm(input_size)
+        # self.l_norm = nn.LayerNorm(input_size)
         self.dropout = nn.Dropout(drop_out)
         self.fc = nn.Linear(hidden_size, 1)
         self.relu = nn.ReLU()
@@ -36,7 +53,7 @@ class HydrologyLSTM(nn.Module):
 
     def forward(self, x):
 
-        x = self.l_norm(x)
+        # x = self.l_norm(x)
         x, _ = self.lstm(x)
         x = self.dropout(x)[:, -1, :]
         x = self.fc(x)
@@ -46,7 +63,7 @@ class HydrologyLSTM(nn.Module):
 
     def forward_predict(self, x):
 
-        x = self.l_norm(x)
+        # x = self.l_norm(x)
         x, (h, c) = self.lstm(x)
         x = self.dropout(x)[:, -1, :]
         x = self.fc(x)

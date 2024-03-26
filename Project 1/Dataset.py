@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 
-def dataloader(data, lookback, split_ratios, batch_size):
+def dataloader(data, lookback, split_ratios, batch_size, num_workers=4, pin_memory=False):
     """
     Prepares training, validation, and test datasets and their respective DataLoaders using the custom Data class.
 
@@ -17,8 +17,11 @@ def dataloader(data, lookback, split_ratios, batch_size):
     Returns:
     A dictionary containing 'train', 'validate', and 'test' DataLoaders.
     """
-    features = data.iloc[:, 1:-1].values
-    targets = data.iloc[:, -1].values
+    # features = data.iloc[:, 1:-1].values
+    # targets = data.iloc[:, -1].values
+
+    features = data[:, 1:-1]
+    targets = data[:, -1]
 
     # Calculate indices for splits
     total_samples = len(data)
@@ -52,10 +55,10 @@ def dataloader(data, lookback, split_ratios, batch_size):
 
     # Create DataLoaders
     dataloaders = {
-        'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True),
-        'train_not_shuffled': DataLoader(train_dataset, batch_size=batch_size, shuffle=False),
-        'validate': DataLoader(validate_dataset, batch_size=batch_size, shuffle=False),
-        'test': DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+        'train': DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=pin_memory),
+        'train_not_shuffled': DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory),
+        'validate': DataLoader(validate_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory),
+        'test': DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=pin_memory)
     }
 
     return dataloaders

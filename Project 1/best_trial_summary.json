@@ -2,34 +2,34 @@
     "config": {
         "hidden_size": 100,
         "num_layers": 1,
-        "drop_out": 0.4,
-        "lr": 0.008073853015325075,
+        "drop_out": 0.3,
+        "lr": 0.00040585950481070865,
         "batch_size": 128,
         "lookback": 400
     },
     "metrics": {
-        "loss": 0.007484871089902172,
-        "timestamp": 1711019468,
+        "loss": 0.01734611525133289,
+        "timestamp": 1711363307,
         "checkpoint_dir_name": null,
         "done": true,
         "training_iteration": 100,
-        "trial_id": "f3680_00010",
-        "date": "2024-03-21_12-11-08",
-        "time_this_iter_s": 5.913687229156494,
-        "time_total_s": 657.599091053009,
-        "pid": 13145,
+        "trial_id": "4afa8_00004",
+        "date": "2024-03-25_11-41-47",
+        "time_this_iter_s": 4.452433824539185,
+        "time_total_s": 808.9759232997894,
+        "pid": 10228,
         "hostname": "philip-IdeaPad-5-Pro-14ACN6",
-        "node_ip": "193.157.182.21",
+        "node_ip": "193.157.186.61",
         "config": {
             "hidden_size": 100,
             "num_layers": 1,
-            "drop_out": 0.4,
-            "lr": 0.008073853015325075,
+            "drop_out": 0.3,
+            "lr": 0.00040585950481070865,
             "batch_size": 128,
             "lookback": 400
         },
-        "time_since_restore": 657.599091053009,
+        "time_since_restore": 808.9759232997894,
         "iterations_since_restore": 100,
-        "experiment_tag": "10_batch_size=128,drop_out=0.4000,hidden_size=100,lookback=400,lr=0.0081,num_layers=1"
+        "experiment_tag": "4_batch_size=128,drop_out=0.3000,hidden_size=100,lookback=400,lr=0.0004,num_layers=1"
     }
 }

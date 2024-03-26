@@ -6,6 +6,7 @@ from Dataset import dataloader
 from Model import HydrologyLSTM
 import matplotlib.pyplot as plt
 import torch
+from sklearn.preprocessing import StandardScaler
 
 
 # from GeneratePlots import Plots
@@ -34,7 +35,10 @@ def run_model(best_trial_config, epochs, abs_path):
     lr = best_trial_config["lr"]
 
     data = pd.read_csv(abs_path, delimiter='\t')
-    dataloaders = dataloader(data, lookback, split_ratios, batch_size)
+    scaler = StandardScaler()
+    data = scaler.fit_transform(data)
+    dataloaders = dataloader(
+        data, lookback, split_ratios, batch_size, pin_memory=True)
 
     input_size = data.shape[1] - 2  # The number of features
 
@@ -55,19 +59,33 @@ def run_model(best_trial_config, epochs, abs_path):
     avg_loss, y_hat_train_set, y_train_set, cell_states_train = model.predict(
         dataloaders['train_not_shuffled'], ray_tune=False)
 
+    print(len(y_hat_train_set))
+    print(len(y_train_set))
+    print(type(y_hat_train_set[0]))
+    print(type(y_train_set[0]))
+    y_hat_train_set = torch.tensor(y_hat_train_set)
+    y_train_set = torch.tensor(y_train_set)
+    new_data = torch.cat([y_hat_train_set, y_train_set], dim=-1)
+    print(new_data.shape)
+
+    new_data = scaler.inverse_transform(new_data)
+
     loss = (model.train_loss, model.validation_loss)
     train = (y_hat_train_set, y_train_set)
     validation = (y_hat_validation_set, y_validation_set)
     test = (y_hat_test_set, y_test_set)
+    cell_states = (cell_states_train, cell_states_val, cell_states_test)
 
-    return loss, train, validation, test
+    return loss, train, validation, test, cell_states
 
 
-def run_plots(loss, train, validation, test):
+def run_plots(loss, train, validation, test, cell_states):
+
     y_hat_train_set, y_train_set = train
     y_hat_validation_set, y_validation_set = validation
     train_loss, validation_loss = loss
     y_hat_test_set, y_test_set = test
+    cs_train, cs_val, cs_test = cell_states
 
     y_hat_train_set_np = torch.cat(y_hat_train_set, dim=0).detach().numpy()
     y_train_set_np = torch.cat(y_train_set, dim=0).detach().numpy()
@@ -117,6 +135,13 @@ def run_plots(loss, train, validation, test):
     plt.savefig('Training_Loss_vs_Epochs_new.png')
     plt.show()
 
+    cs_train = torch.tensor(cs_train)
+
+    for j in range(cs_train.shape[1]):
+        plt.plot(range(cs_train.shape[2]), cs_train[0, j, :])
+
+    plt.show()
+
 
 if __name__ == "__main__":
 
@@ -135,10 +160,78 @@ if __name__ == "__main__":
 
     cpu_cores = 4       # Number of cpu cores to be used in the hyperparameter search
 
-    best_trial_config = run_hyperparameter_search(
-        abs_path, epochs, num_samples, max_t, grace_period, cpu_cores)
+    test_trial_config = {'hidden_size': 100, 'num_layers': 1, 'drop_out': 0.3,
+                         'lr': 0.00040585950481070865, 'batch_size': 16, 'lookback': 400}
+    # best_trial_config = run_hyperparameter_search(
+    #    abs_path, epochs, num_samples, max_t, grace_period, cpu_cores)
 
-    loss, train, validation, test = run_model(
-        best_trial_config, epochs, abs_path)
+    loss, train, validation, test, cell_states = run_model(
+        test_trial_config, epochs, abs_path)
 
-    run_plots(loss, train, validation, test)
+    cs_train, cs_val, cs_test = cell_states
+    cs_train = cs_train[:18]
+    cs_train = torch.cat(cs_train, dim=0)
+    torch.save(cs_train, "cs_train2.pt")
+
+    run_plots(loss, train, validation, test, cell_states)
+
+    """
+    cs_train = torch.load("cs_train2.pt")
+
+    print(cs_train.shape)
+
+    for i in range(16):
+        plt.plot(range(cs_train.shape[2]), cs_train[0, i, :])
+    plt.show()
+
+    """
+
+    """
+
+    cs_train = torch.flatten(cs_train, start_dim=0, end_dim=1)
+    cs_train = torch.sum(cs_train, dim=0)
+    print(cs_train.shape)
+
+    plt.plot(range(100), cs_train/torch.max(cs_train))
+    plt.show()
+    """
+
+    """
+    s = []
+    for i in range(cs_train.shape[1]):
+        s.append(torch.sum(cs_train[0, i, :]))
+
+    s = torch.tensor(s)
+    print(s.shape)
+
+    plt.plot(range(128), s/torch.max(s))
+    plt.show()
+
+    p = []
+    for i in range(cs_train.shape[2]):
+        p.append(torch.sum(cs_train[0, :, i]))
+
+    p = torch.tensor(p)
+    print(p.shape)
+
+    plt.plot(range(100), p/torch.max(p))
+    plt.show()
+
+    r = range(100)
+    for k in range(cs_train.shape[0]):
+        q = []
+        for l in range(cs_train.shape[2]):
+            q.append(torch.sum(cs_train[k, :, l]))
+
+        q = torch.tensor(q)
+        plt.plot(r, q/torch.max(q))
+
+    plt.title("Displaying each layer summed over each batch")
+    plt.show()
+
+    for i in range(cs_train.shape[0]):
+        plt.plot(range(cs_train.shape[2]), cs_train[i, 1, :])
+
+    # plt.title("Displaying each layer for ")
+    plt.show()
+    """
