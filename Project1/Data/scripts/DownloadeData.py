@@ -3,6 +3,7 @@ import urllib
 import os
 from bs4 import BeautifulSoup
 
+
 def setup_directory(subdirectory):
     """Set up a download directory within the current working directory."""
     base_dir = os.getcwd()
@@ -51,14 +52,15 @@ def download_dataset(dataset_info):
         download_dir = setup_directory(info['subdirectory'])
 
         file_urls = list_file_urls(
-            info['file_list_url'], 
-            info['base_url'], 
-            extension=info.get('extension', '.nc'), 
-            year_filter=info.get('year_filter'), 
+            info['file_list_url'],
+            info['base_url'],
+            extension=info.get('extension', '.nc'),
+            year_filter=info.get('year_filter'),
             filter_condition=info.get('filter_condition'))
 
         for url in file_urls:
             download_file(url, download_dir)
+
 
 def main(years):
     datasets = [
@@ -84,12 +86,11 @@ def main(years):
             'extension': '?download=1',
             'year_filter': years,
             'filter_condition': 'Longwave',
-}
+        }
     ]
     download_dataset(datasets)
 
-  
+
 if __name__ == "__main__":
     years = (1980, 2000)
     main(years)
-

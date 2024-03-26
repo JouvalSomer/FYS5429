@@ -1,6 +1,7 @@
 from HyperParamSearch import hyperparameter_search
 from ray import tune
 import os
+import numpy as np
 import pandas as pd
 from Dataset import dataloader
 from Model import HydrologyLSTM
@@ -35,8 +36,19 @@ def run_model(best_trial_config, epochs, abs_path):
     lr = best_trial_config["lr"]
 
     data = pd.read_csv(abs_path, delimiter='\t')
-    scaler = StandardScaler()
-    data = scaler.fit_transform(data)
+    dataX = data.loc[:, data.columns != "Qobs"]
+    dataY = data["Qobs"].to_numpy().reshape(-1, 1)
+
+    scalerX = StandardScaler().fit(dataX)
+    scalerY = StandardScaler().fit(dataY)
+
+    dataX = scalerX.transform(dataX)
+    dataY = scalerY.transform(dataY)
+
+    dataY.reshape(-1)
+
+    data = np.concatenate((dataX, dataY), axis=-1)
+
     dataloaders = dataloader(
         data, lookback, split_ratios, batch_size, pin_memory=True)
 
@@ -59,17 +71,23 @@ def run_model(best_trial_config, epochs, abs_path):
     avg_loss, y_hat_train_set, y_train_set, cell_states_train = model.predict(
         dataloaders['train_not_shuffled'], ray_tune=False)
 
-    print(len(y_hat_train_set))
-    print(len(y_train_set))
-    print(type(y_hat_train_set[0]))
-    print(type(y_train_set[0]))
     y_hat_train_set = torch.cat(y_hat_train_set, dim=0)
     y_train_set = torch.cat(y_train_set, dim=0)
 
-    new_data = torch.cat([y_hat_train_set, y_train_set], dim=-1)
-    print(new_data.shape)
+    y_hat_validation_set = torch.cat(y_hat_validation_set, dim=0)
+    y_validation_set = torch.cat(y_validation_set, dim=0)
 
-    new_data = scaler.inverse_transform(new_data)
+    # new_data = torch.cat([y_hat_train_set, y_train_set], dim=-1)
+    # print(new_data.shape)
+
+    print(f"Before inverse: {np.min(y_hat_train_set)}")
+    y_hat_train_set = scalerY.inverse_transform(y_hat_train_set)
+
+    print(f"After inverse: {np.min(y_hat_train_set)}")
+    y_train_set = scalerY.inverse_transform(y_train_set)
+
+    y_hat_validation_set = scalerY.inverse_transform(y_hat_validation_set)
+    y_validation_set = scalerY.inverse_transform(y_validation_set)
 
     loss = (model.train_loss, model.validation_loss)
     train = (y_hat_train_set, y_train_set)
@@ -88,16 +106,16 @@ def run_plots(loss, train, validation, test, cell_states):
     y_hat_test_set, y_test_set = test
     cs_train, cs_val, cs_test = cell_states
 
-    y_hat_train_set_np = torch.cat(y_hat_train_set, dim=0).detach().numpy()
-    y_train_set_np = torch.cat(y_train_set, dim=0).detach().numpy()
+    # y_hat_train_set_np = torch.cat(y_hat_train_set, dim=0).detach().numpy()
+    # y_train_set_np = torch.cat(y_train_set, dim=0).detach().numpy()
 
-    y_hat_validation_set_np = torch.cat(
-        y_hat_validation_set, dim=0).detach().numpy()
-    y_validation_set_np = torch.cat(y_validation_set, dim=0).detach().numpy()
+    # y_hat_validation_set_np = torch.cat(
+    #    y_hat_validation_set, dim=0).detach().numpy()
+    # y_validation_set_np = torch.cat(y_validation_set, dim=0).detach().numpy()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(y_hat_train_set_np, label='LSTM Prediction (train)', alpha=0.7)
-    plt.plot(y_train_set_np, label='Qobs (data, train)', alpha=0.7)
+    plt.plot(y_hat_train_set, label='LSTM Prediction (train)', alpha=0.7)
+    plt.plot(y_train_set, label='Qobs (data, train)', alpha=0.7)
     plt.title('LSTM Predictions vs Observed Data')
     plt.xlabel('Days')
     plt.ylabel('Discharge')
@@ -106,9 +124,9 @@ def run_plots(loss, train, validation, test, cell_states):
     plt.show()
 
     plt.figure(figsize=(10, 6))
-    plt.plot(y_hat_validation_set_np,
+    plt.plot(y_hat_validation_set,
              label='LSTM Prediction (validation)', alpha=0.7)
-    plt.plot(y_validation_set_np, label='Qobs (data, validation)', alpha=0.7)
+    plt.plot(y_validation_set, label='Qobs (data, validation)', alpha=0.7)
     plt.title('LSTM Predictions vs Observed Data')
     plt.xlabel('Days')
     plt.ylabel('Discharge')
@@ -136,12 +154,12 @@ def run_plots(loss, train, validation, test, cell_states):
     plt.savefig('Training_Loss_vs_Epochs_new.png')
     plt.show()
 
-    cs_train = torch.tensor(cs_train)
+    # cs_train = torch.tensor(cs_train)
 
-    for j in range(cs_train.shape[1]):
-        plt.plot(range(cs_train.shape[2]), cs_train[0, j, :])
+    # for j in range(cs_train.shape[1]):
+    #    plt.plot(range(cs_train.shape[2]), cs_train[0, j, :])
 
-    plt.show()
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -152,7 +170,7 @@ if __name__ == "__main__":
     split_ratios = (train, validation, test)
 
     # Number of epochs in the model training (epochs <= max_t)
-    epochs = 100
+    epochs = 10
     num_samples = 20    # Number of random samples to be tested
     # Maximum number of training iterations (epochs) for any given trial
     max_t = 100
@@ -169,10 +187,10 @@ if __name__ == "__main__":
     loss, train, validation, test, cell_states = run_model(
         test_trial_config, epochs, abs_path)
 
-    cs_train, cs_val, cs_test = cell_states
-    cs_train = cs_train[:18]
-    cs_train = torch.cat(cs_train, dim=0)
-    torch.save(cs_train, "cs_train2.pt")
+    # cs_train, cs_val, cs_test = cell_states
+    # cs_train = cs_train[:18]
+    # cs_train = torch.cat(cs_train, dim=0)
+    # torch.save(cs_train, "cs_train2.pt")
 
     run_plots(loss, train, validation, test, cell_states)
 

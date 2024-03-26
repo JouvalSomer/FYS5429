@@ -9,16 +9,28 @@ class LSTMBlock(nn.Module):
     def __init__(self,
                  input_size: int,
                  hidden_size: int,
-                 num_layers: int
+                 num_layers: int = 1,
+                 T: int = 400,
                  ) -> None:
 
-        self.lstm_cell = nn.LSTMCell(
+        self.T = T
+        # self.LSTMcells = nn.ModuleList(nn.LSTMCell(
+        #    input_size=input_size, hidden_size=hidden_size) for _ in range(T))
+        self.LSTMCell = nn.LSTMCell(
             input_size=input_size, hidden_size=hidden_size)
-        self.cell_array = None
+        self.cell_storage = []
         pass
 
     def forward(self, x):
-        pass
+
+        # x = [batch, features, T]
+
+        h = None
+        c = None
+
+        for t in range(self.T):
+            h, c = self.LSTMCell(x[:, :, t], h, c)
+            self.storage.append(c)
 
 
 class HydrologyLSTM(nn.Module):
@@ -98,6 +110,7 @@ class HydrologyLSTM(nn.Module):
             ) -> None:
 
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        loss_fn = nn.MSELoss()
         self.train()
 
         for e in range(epochs):
@@ -109,7 +122,7 @@ class HydrologyLSTM(nn.Module):
                 optimizer.zero_grad()
                 pred = self.forward(x_batch.to(self.device))
 
-                loss = self.loss_function(pred, y_batch.to(self.device))
+                loss = loss_fn(pred, y_batch.to(self.device))
 
                 loss.backward()
                 optimizer.step()
@@ -136,7 +149,7 @@ class HydrologyLSTM(nn.Module):
         y_set = []
         cell_states = []
         total_loss = 0
-
+        loss_fn = nn.MSELoss()
         self.eval()
         with torch.no_grad():
             for x_batch, y_batch in dataloader:
@@ -146,8 +159,8 @@ class HydrologyLSTM(nn.Module):
                 y_set.append(y_batch)
                 cell_states.append(cell)
 
-                total_loss += self.loss_function(pred,
-                                                 y_batch.to(self.device)).item()
+                total_loss += loss_fn(pred,
+                                      y_batch.to(self.device)).item()
 
         avg_loss = total_loss / len(dataloader.dataset)
 
