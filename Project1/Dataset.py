@@ -17,11 +17,11 @@ def dataloader(data, lookback, split_ratios, batch_size, num_workers=4, pin_memo
     Returns:
     A dictionary containing 'train', 'validate', and 'test' DataLoaders.
     """
-    # features = data.iloc[:, 1:-1].values
-    # targets = data.iloc[:, -1].values
+    features = data.iloc[:, 1:-1].values
+    targets = data.iloc[:, -1].values
 
-    features = data[:, 1:-1]
-    targets = data[:, -1]
+    # features = data[:, 1:-1]
+    # targets = data[:, -1]
 
     # Calculate indices for splits
     total_samples = len(data)
@@ -39,8 +39,10 @@ def dataloader(data, lookback, split_ratios, batch_size, num_workers=4, pin_memo
 
     X_train, Y_train = generate_sequences(
         features, targets, 0, train_end, lookback)
+
     X_validate, Y_validate = generate_sequences(
         features, targets, train_end, validate_end, lookback)
+
     X_test, Y_test = generate_sequences(
         features, targets, validate_end, total_samples, lookback)
 

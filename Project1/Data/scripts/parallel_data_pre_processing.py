@@ -6,6 +6,7 @@ import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
+
 def process_year_variable(year, variable_group, symbols, base_path, shapefile_path):
     """
     Processes datasets for a single year and variable based on a shapefile, calculates spatial means,
@@ -21,7 +22,7 @@ def process_year_variable(year, variable_group, symbols, base_path, shapefile_pa
             min_lon, min_lat, max_lon, max_lat = gdf.total_bounds
             lat_name = 'latitude' if 'latitude' in ds.coords else 'lat'
             lon_name = 'longitude' if 'longitude' in ds.coords else 'lon'
-            mask = ((ds[lat_name] >= min_lat) & (ds[lat_name] <= max_lat) & 
+            mask = ((ds[lat_name] >= min_lat) & (ds[lat_name] <= max_lat) &
                     (ds[lon_name] >= min_lon) & (ds[lon_name] <= max_lon))
             ds = ds.where(mask, drop=True)
 
@@ -34,10 +35,12 @@ def process_year_variable(year, variable_group, symbols, base_path, shapefile_pa
 
             coord_x_name = 'X' if 'X' in ds_mask.dims else 'x'
             coord_y_name = 'Y' if 'Y' in ds_mask.dims else 'y'
-            spatial_mean_var = ds_mask[symbol].mean(dim=[coord_y_name, coord_x_name])
+            spatial_mean_var = ds_mask[symbol].mean(
+                dim=[coord_y_name, coord_x_name])
             time_mean_var = spatial_mean_var.mean(dim='time')
 
-            daily_means_df = spatial_mean_var.to_dataframe(name=f'daily_mean_{symbol}')
+            daily_means_df = spatial_mean_var.to_dataframe(
+                name=f'daily_mean_{symbol}')
             daily_means_df[f'time_mean_{symbol}'] = time_mean_var.item()
             daily_means_df.reset_index(inplace=True)
             daily_means_df['time'] = daily_means_df['time'].dt.normalize()
@@ -46,6 +49,7 @@ def process_year_variable(year, variable_group, symbols, base_path, shapefile_pa
     except Exception as e:
         print(f"Error processing {variable} for {year}: {e}")
     return dataframes_list
+
 
 def concatenate_dataframes(dataframes_dict, output_filename):
     """
@@ -59,40 +63,42 @@ def concatenate_dataframes(dataframes_dict, output_filename):
 
     combined_df = pd.DataFrame()
     for variable, df in concatenated_by_variable.items():
-        df = df.rename(columns={f'daily_mean_{variable}': f'{variable}_daily', f'time_mean_{variable}': f'{variable}_yearly'})
+        df = df.rename(columns={f'daily_mean_{variable}': f'{variable}_daily',
+                       f'time_mean_{variable}': f'{variable}_yearly'})
         if combined_df.empty:
             combined_df = df
         else:
             combined_df = combined_df.merge(df, on='time', how='outer')
 
-
     combined_df.to_csv(output_filename, index=False)
     print(f"Combined data saved to '{output_filename}'.")
+
 
 if __name__ == '__main__':
     start_time = time.time()
 
     # Define the variables information and other parameters
     variables_info = {
-        ('pressure',): (('sp',), 'Data/Surface_Pressure/HySN_Surface_Pressure_'),
-        ('precip', 'maxTemp', 'minTemp'): (('rr', 'tx', 'tn',), 'Data/Climate/seNorge2018_'), 
-        ('humidity',): (('huss',), 'Data/Humidity/HySN_Near_Surface_Specific_Humidity_'), 
-        ('Radiation',): (('rsds',), 'Data/Shortwave_Radiation/HySN_Surface_Downwelling_Shortwave_Radiation_'), 
-        ('SWE',): (('snow_water_equivalent',), 'Data/Snow_Water_Equivalent/swe_')
+        ('pressure',): (('sp',), 'Data/HySN/HySN_Surface_Pressure_'),
+        ('precip', 'maxTemp', 'minTemp'): (('rr', 'tx', 'tn',), 'Data/Climate/seNorge2018_'),
+        ('humidity',): (('huss',), 'Data/HySN/HySN_Near_Surface_Specific_Humidity_'),
+        ('Radiation',): (('rsds',), 'Data/HySN/HySN_Surface_Downwelling_Shortwave_Radiation_'),
+        ('SWE',): (('snow_water_equivalent',), 'Data/SWE/swe_')
     }
-    
-    years = (2014, 2015)
+
+    years = (2001, 2015)
     shapefile_path = 'Catchment_shapefiles/Nesbyen_Catchment_Boundary_33N.shp'
 
     # Prepare tasks for parallel execution
-    tasks = [(year, variable_group, symbols, base_path, shapefile_path) 
-             for year in range(years[0], years[1] + 1) 
+    tasks = [(year, variable_group, symbols, base_path, shapefile_path)
+             for year in range(years[0], years[1] + 1)
              for variable_group, (symbols, base_path) in variables_info.items()]
 
     dataframes_dict = {}
     with ProcessPoolExecutor() as executor:
         # Submit tasks for parallel processing
-        future_to_data = {executor.submit(process_year_variable, *task): task for task in tasks}
+        future_to_data = {executor.submit(
+            process_year_variable, *task): task for task in tasks}
 
         # Process completed tasks as they become available
         for future in as_completed(future_to_data):
@@ -108,4 +114,3 @@ if __name__ == '__main__':
 
     end_time = time.time()
     print(f"Execution time: {end_time - start_time} seconds")
-

@@ -1,0 +1,35 @@
+{
+    "config": {
+        "hidden_size": 300,
+        "num_layers": 1,
+        "drop_out": 0.2,
+        "lr": 0.002274122554018489,
+        "batch_size": 128,
+        "lookback": 300
+    },
+    "metrics": {
+        "loss": 0.002342385367655138,
+        "timestamp": 1711498830,
+        "checkpoint_dir_name": null,
+        "done": true,
+        "training_iteration": 10,
+        "trial_id": "0d48e_00000",
+        "date": "2024-03-27_01-20-30",
+        "time_this_iter_s": 31.98729109764099,
+        "time_total_s": 325.78594040870667,
+        "pid": 24450,
+        "hostname": "philip-IdeaPad-5-Pro-14ACN6",
+        "node_ip": "192.168.0.110",
+        "config": {
+            "hidden_size": 300,
+            "num_layers": 1,
+            "drop_out": 0.2,
+            "lr": 0.002274122554018489,
+            "batch_size": 128,
+            "lookback": 300
+        },
+        "time_since_restore": 325.78594040870667,
+        "iterations_since_restore": 10,
+        "experiment_tag": "0_batch_size=128,drop_out=0.2000,hidden_size=300,lookback=300,lr=0.0023,num_layers=1"
+    }
+}

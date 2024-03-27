@@ -56,7 +56,7 @@ class HydrologyLSTM(nn.Module):
 
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                             num_layers=num_layers, batch_first=True)
-        # self.l_norm = nn.LayerNorm(input_size)
+        self.l_norm = nn.LayerNorm(input_size)
         self.dropout = nn.Dropout(drop_out)
         self.fc = nn.Linear(hidden_size, 1)
         self.relu = nn.ReLU()
@@ -65,7 +65,7 @@ class HydrologyLSTM(nn.Module):
 
     def forward(self, x):
 
-        # x = self.l_norm(x)
+        x = self.l_norm(x)
         x, _ = self.lstm(x)
         x = self.dropout(x)[:, -1, :]
         x = self.fc(x)
@@ -75,7 +75,7 @@ class HydrologyLSTM(nn.Module):
 
     def forward_predict(self, x):
 
-        # x = self.l_norm(x)
+        x = self.l_norm(x)
         x, (h, c) = self.lstm(x)
         x = self.dropout(x)[:, -1, :]
         x = self.fc(x)
@@ -136,7 +136,7 @@ class HydrologyLSTM(nn.Module):
                 print(f"Epoch: {e} || Loss: {e_loss}")
 
             if ray_tune:
-                val_loss, y_hat_set, y_set, cell_states = self.predict(
+                val_loss, y_hat_set, y_set = self.predict(
                     dataloaders['validate'], ray_tune)
                 train.report({'loss': val_loss})
 
@@ -147,17 +147,16 @@ class HydrologyLSTM(nn.Module):
 
         y_hat_set = []
         y_set = []
-        cell_states = []
         total_loss = 0
         loss_fn = nn.MSELoss()
+
         self.eval()
         with torch.no_grad():
             for x_batch, y_batch in dataloader:
-                pred, cell = self.forward_predict(x_batch.to(self.device))
+                pred = self.forward(x_batch.to(self.device))
 
                 y_hat_set.append(pred)
                 y_set.append(y_batch)
-                cell_states.append(cell)
 
                 total_loss += loss_fn(pred,
                                       y_batch.to(self.device)).item()
@@ -169,4 +168,4 @@ class HydrologyLSTM(nn.Module):
 
         print(f'Validation Loss: {avg_loss}')
 
-        return avg_loss, y_hat_set, y_set, cell_states
+        return avg_loss, y_hat_set, y_set

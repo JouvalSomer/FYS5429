@@ -1,0 +1,10 @@
+{
+    "config": {
+        "hidden_size": 100,
+        "num_layers": 1,
+        "drop_out": 0.3,
+        "lr": 0.00040585950481070865,
+        "batch_size": 16,
+        "lookback": 400
+    }
+}
